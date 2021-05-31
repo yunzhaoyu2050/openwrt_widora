@@ -1,0 +1,28 @@
+--- a/include/linux/serial_8250.h	2016-03-18 02:09:52.000000000 +0800
++++ b/include/linux/serial_8250.h	2021-05-25 13:41:56.000000000 +0800
+@@ -14,6 +14,10 @@
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
++#if defined(CONFIG_LORAWAN_OPENWRT)
++#include <linux/interrupt.h>
++#endif
++
+ /*
+  * This is the platform device platform_data structure
+  */
+@@ -104,6 +108,14 @@
+ 	void			(*dl_write)(struct uart_8250_port *, int);
+ 	int			(*rs485_config)(struct uart_8250_port *,
+ 						struct serial_rs485 *rs485);
++#if defined(CONFIG_LORAWAN_OPENWRT)
++    /* r485 */
++    int r485_rts_gpio;
++    //struct hrtimer r485_start_tx_timer;
++    struct hrtimer r485_stop_tx_timer;
++    struct hrtimer *r485_active_timer;
++    int char_time_us;
++#endif
+ };
+ 
+ static inline struct uart_8250_port *up_to_u8250p(struct uart_port *up)

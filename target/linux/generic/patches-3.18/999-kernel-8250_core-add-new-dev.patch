@@ -1,0 +1,296 @@
+--- a/drivers/tty/serial/8250/8250_core.c	2021-05-21 09:04:08.891079027 +0800
++++ b/drivers/tty/serial/8250/8250_core.c	2021-05-25 16:15:06.000000000 +0800
+@@ -48,6 +48,14 @@
+ 
+ #include "8250.h"
+ 
++#if defined(CONFIG_LORAWAN_OPENWRT)
++#include <linux/serial.h>
++#include <linux/gpio.h>
++#include <linux/of_gpio.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <linux/delay.h>
++#endif
++
+ /*
+  * Configuration:
+  *   share_irqs - whether we pass IRQF_SHARED to request_irq().  This option
+@@ -1319,9 +1327,178 @@
+ 	port->irq = (irq > 0) ? irq : 0;
+ }
+ 
++#if defined(CONFIG_LORAWAN_OPENWRT)
++enum hrtimer_restart serial8250_r485_handle_stop_tx(struct hrtimer *t)
++{
++	struct uart_8250_port *p;
++	unsigned long flags;
++	unsigned char lsr;
++	
++	p = container_of(t, struct uart_8250_port, r485_stop_tx_timer);
++
++    lsr = serial_in(p, UART_LSR);
++    if (!((lsr & BOTH_EMPTY) == BOTH_EMPTY)) {
++        /* for loop */
++        long usec = 1000; // 1ms
++        ktime_t t = ktime_set(usec/1000000, usec%1000000 * 1000);
++        hrtimer_forward_now(&p->r485_stop_tx_timer, t);
++        return HRTIMER_RESTART;
++    }
++
++	serial8250_rpm_get(p);
++	spin_lock_irqsave(&p->port.lock, flags);
++	if (p->r485_active_timer == &p->r485_stop_tx_timer) {
++        if (gpio_is_valid(p->r485_rts_gpio))
++            gpio_set_value(p->r485_rts_gpio, 0);
++    	/*
++    	 * Empty the RX FIFO, we are not interested in anything
++    	 * received during the half-duplex transmission.
++    	 * Enable previously disabled RX interrupts.
++    	 */
++    	if (!(p->rs485.flags & SER_RS485_RX_DURING_TX)) {
++    		
++    		serial8250_clear_and_reinit_fifos(p);
++
++    		p->ier |= UART_IER_RLSI | UART_IER_RDI;
++    		serial_port_out(&p->port, UART_IER, p->ier);
++    	}
++		p->r485_active_timer = NULL;
++	}
++	spin_unlock_irqrestore(&p->port.lock, flags);
++	
++	if (p->ier & UART_IER_THRI) {
++		p->ier &= ~UART_IER_THRI;
++// #ifdef CONFIG_LORAWAN_OPENWRT
++// 		p->ier &= ~UART_IER_PTIME;
++// #endif
++		serial_out(p, UART_IER, p->ier);
++		serial8250_rpm_put_tx(p);
++	}
++	return HRTIMER_NORESTART;
++}
++
++#define to_uart_8250_port(p) ((container_of((p), struct uart_8250_port, port)))
++
++int dw8250_config_rs485(struct uart_port *port, 
++	struct serial_rs485 *rs485)
++{
++	struct uart_8250_port *up = to_uart_8250_port(port);
++
++	//unsigned int mode;
++	int val;
++
++	//pm_runtime_get_sync(up->dev);
++
++	/* Disable interrupts from this port */
++	//mode = up->ier;
++	//up->ier = 0;
++	//serial_out(up, UART_IER, 0);
++
++	rs485->delay_rts_before_send = min(rs485->delay_rts_before_send, 100U);
++	rs485->delay_rts_after_send  = min(rs485->delay_rts_after_send, 100U);
++	up->rs485 = *rs485;
++
++	if (gpio_is_valid(up->r485_rts_gpio)) {
++		val = (up->rs485.flags & SER_RS485_ENABLED) ?
++			SER_RS485_RTS_AFTER_SEND : SER_RS485_RTS_ON_SEND;
++		val = (up->rs485.flags & val) ? 1 : 0;
++		gpio_set_value(up->r485_rts_gpio, val);
++	} else {
++		up->port.flags &= ~SER_RS485_ENABLED;
++		dev_warn(up->port.dev, "uart%d set rs485 off.", up->port.line);
++	}
++	/* Enable interrupts */
++	//up->ier = mode;
++	// serial_out(up, UART_IER, up->ier);
++
++	//pm_runtime_mark_last_busy(up->dev);
++	//pm_runtime_put_autosuspend(up->dev);
++    printk("config s485, uart%d, rst-gpio:%d.\n", up->port.line, up->r485_rts_gpio);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dw8250_config_rs485);
++
++int dw8250_probe_rs485(struct uart_8250_port *up,
++	struct device_node *np)
++{
++	struct serial_rs485 *rs485conf;
++	u32 rs485_delay[2];
++	enum of_gpio_flags flags;
++	int ret;
++
++    struct uart_8250_port *uart_p;
++
++    uart_p = serial8250_get_port(up->port.line);
++    if (!uart_p) {
++        return -ENODEV;
++    }
++    
++	if (!np) {
++		return 0;
++	}
++
++    rs485conf = &uart_p->rs485;
++    if (!(of_property_read_bool(np, "linux,rs485-enabled-at-boot-time")))
++		return 0;
++
++	rs485conf->flags = 0;
++	uart_p->r485_rts_gpio = -EINVAL;
++
++	if (of_property_read_bool(np, "rs485-rts-active-high"))
++		rs485conf->flags |= SER_RS485_RTS_ON_SEND;
++	else
++		rs485conf->flags |= SER_RS485_RTS_AFTER_SEND;
++
++	uart_p->r485_rts_gpio = of_get_named_gpio_flags(np, "rts-gpio", 0, &flags);
++	if (gpio_is_valid(uart_p->r485_rts_gpio)) {
++		ret = devm_gpio_request(up->port.dev, uart_p->r485_rts_gpio, "rs485_rts");
++		if (ret < 0)
++			return ret;
++		ret = gpio_direction_output(uart_p->r485_rts_gpio, 
++		    flags & SER_RS485_RTS_AFTER_SEND);
++		if (ret < 0)
++			return ret;
++	} else if (uart_p->r485_rts_gpio == -EPROBE_DEFER) {
++		return -EPROBE_DEFER;
++	} else {
++		uart_p->r485_rts_gpio = -EINVAL;
++	}
++
++	if (of_property_read_u32_array(np, "rs485-rts-delay", rs485_delay, 2) == 0) {
++		rs485conf->delay_rts_before_send = rs485_delay[0];
++		rs485conf->delay_rts_after_send = rs485_delay[1];
++	}
++
++	if (of_property_read_bool(np, "rs485-rx-during-tx"))
++		rs485conf->flags |= SER_RS485_RX_DURING_TX;
++
++    hrtimer_init(&uart_p->r485_stop_tx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++    uart_p->r485_stop_tx_timer.function = serial8250_r485_handle_stop_tx;
++
++    if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time"))
++		rs485conf->flags |= SER_RS485_ENABLED;
++	return 0;
++}
++EXPORT_SYMBOL_GPL(dw8250_probe_rs485);
++#endif
++
+ static inline void __stop_tx(struct uart_8250_port *p)
+ {
+ 	if (p->ier & UART_IER_THRI) {
++#if defined(CONFIG_LORAWAN_OPENWRT)
++        if (p->rs485.flags & SER_RS485_ENABLED) {
++            long usec = 1000; // 1ms // = p->char_time_us
++            ktime_t t = ktime_set(usec/1000000, usec%1000000 * 1000);
++
++            if (p->r485_active_timer == &p->r485_stop_tx_timer) {
++                // timeout
++                hrtimer_forward_now(&p->r485_stop_tx_timer, t);
++            } else {
++                hrtimer_start(&p->r485_stop_tx_timer, t, HRTIMER_MODE_REL);
++                p->r485_active_timer = &p->r485_stop_tx_timer;
++            }
++        }
++#endif
+ 		p->ier &= ~UART_IER_THRI;
+ 		serial_out(p, UART_IER, p->ier);
+ 		serial8250_rpm_put_tx(p);
+@@ -1332,6 +1509,38 @@
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(port);
+ 
++#if defined(CONFIG_LORAWAN_OPENWRT)
++    // Will not enter during testing ...
++	int res;
++	// uart for 485
++	if (up->rs485.flags & SER_RS485_ENABLED) {
++		res = (up->rs485.flags & SER_RS485_RTS_AFTER_SEND) ? 1 : 0;
++		if (gpio_get_value(up->r485_rts_gpio) != res) {
++			if (up->rs485.delay_rts_after_send > 0)
++				mdelay(up->rs485.delay_rts_after_send);
++			gpio_set_value(up->r485_rts_gpio, res);
++		}
++	}
++
++	if (up->ier & UART_IER_THRI) {
++		up->ier &= ~UART_IER_THRI;
++		serial_out(up, UART_IER, up->ier);
++	}
++
++	if ((up->rs485.flags & SER_RS485_ENABLED) &&
++	    !(up->rs485.flags & SER_RS485_RX_DURING_TX)) {
++		/*
++		 * Empty the RX FIFO, we are not interested in anything
++		 * received during the half-duplex transmission.
++		 */
++		serial_out(up, UART_FCR, up->fcr | UART_FCR_CLEAR_RCVR);
++		/* Re-enable RX interrupts */
++		up->ier |= UART_IER_RLSI | UART_IER_RDI;
++		up->port.read_status_mask |= UART_LSR_DR;
++		serial_out(up, UART_IER, up->ier);
++	}
++#endif
++
+ 	serial8250_rpm_get(up);
+ 	__stop_tx(up);
+ 
+@@ -1348,6 +1557,27 @@
+ static void serial8250_start_tx(struct uart_port *port)
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(port);
++	
++#if defined(CONFIG_LORAWAN_OPENWRT)
++    // uart for 485
++	if (up->rs485.flags & SER_RS485_ENABLED) {
++		up->r485_active_timer = NULL;
++        if (up->rs485.flags & SER_RS485_RTS_ON_SEND) {
++            if (up->rs485.delay_rts_before_send > 0) {
++                mdelay(up->rs485.delay_rts_before_send);
++            }
++            
++            if (gpio_is_valid(up->r485_rts_gpio))
++                gpio_set_value(up->r485_rts_gpio, 1);
++            else
++                gpio_set_value(up->r485_rts_gpio, 0);
++        }
++	}
++
++	if ((up->rs485.flags & SER_RS485_ENABLED) &&
++	    !(up->rs485.flags & SER_RS485_RX_DURING_TX))
++		serial8250_stop_rx(port);
++#endif
+ 
+ 	serial8250_rpm_get_tx(up);
+ 	if (up->dma && !serial8250_tx_dma(up)) {
+@@ -2468,7 +2698,31 @@
+ 	 * Update the per-port timeout.
+ 	 */
+ 	uart_update_timeout(port, termios->c_cflag, baud);
+-
++	
++#if defined(CONFIG_LORAWAN_OPENWRT)
++	{
++		int bits;
++        switch (termios->c_cflag & CSIZE) {
++		case CS5:
++			bits = 7;
++			break;
++		case CS6:
++			bits = 8;
++			break;
++		case CS7:
++			bits = 9;
++			break;
++		default:
++			bits = 10;
++			break; /* CS8 */
++		}
++		if (termios->c_cflag & CSTOPB)
++			bits++;
++		if (termios->c_cflag & PARENB)
++			bits++;
++		up->char_time_us = 1000000 * bits / baud + 1;
++	}
++#endif
+ 	port->read_status_mask = UART_LSR_OE | UART_LSR_THRE | UART_LSR_DR;
+ 	if (termios->c_iflag & INPCK)
+ 		port->read_status_mask |= UART_LSR_FE | UART_LSR_PE;

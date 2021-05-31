@@ -1,0 +1,59 @@
+--- a/drivers/usb/serial/option.c	2021-05-25 16:24:54.805160084 +0800
++++ b/drivers/usb/serial/option.c	2021-05-24 18:11:31.835762155 +0800
+@@ -1832,6 +1832,17 @@
+ 	{ USB_DEVICE_INTERFACE_CLASS(0x2020, 0x4000, 0xff) },                /* OLICARD300 - MT6225 */
+ 	{ USB_DEVICE(INOVIA_VENDOR_ID, INOVIA_SEW858) },
+ 	{ USB_DEVICE(VIATELECOM_VENDOR_ID, VIATELECOM_PRODUCT_CDS7) },
++#if 1 //Added Quectel part by zhaoyu at 2021.05.24 
++	{ USB_DEVICE(0x05C6, 0x9090) }, /* Quectel UC15 */
++	{ USB_DEVICE(0x05C6, 0x9003) }, /* Quectel UC20 */
++	{ USB_DEVICE(0x05C6, 0x9215) }, /* Quectel EC20 */
++	{ USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC25/EC20 R2.0 */
++	{ USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21 */
++	{ USB_DEVICE(0x2C7C, 0x6026) }, /* Quectel EC200T-CN */
++	{ USB_DEVICE(0x2C7C, 0x6002) }, /* Quectel EC200S-CN */
++	{ USB_DEVICE(0x2C7C, 0x6120) }, /* Quectel UC200 */
++	{ USB_DEVICE(0x2C7C, 0x6000) }, /* Quectel EC200/UC200 */
++#endif
+ 	{ } /* Terminating entry */
+ };
+ MODULE_DEVICE_TABLE(usb, option_ids);
+@@ -1866,6 +1874,9 @@
+ #ifdef CONFIG_PM
+ 	.suspend           = usb_wwan_suspend,
+ 	.resume            = usb_wwan_resume,
++#if 1 //Added by Quectel
++	.reset_resume = usb_wwan_resume,
++#endif
+ #endif
+ };
+ 
+@@ -1932,6 +1943,28 @@
+ 	    dev_desc->idProduct == cpu_to_le16(SAMSUNG_PRODUCT_GT_B3730) &&
+ 	    iface_desc->bInterfaceClass != USB_CLASS_CDC_DATA)
+ 		return -ENODEV;
++#if 1 //Added by Quectel
++	//Quectel UC20's interface 4 can be used as USB Network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x9003)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++	//Quectel EC20's interface 4 can be used as USB Network device
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(0x05C6) &&
++		serial->dev->descriptor.idProduct == cpu_to_le16(0x9215)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
++		__u16 idProduct = le16_to_cpu(serial->dev->descriptor.idProduct);
++		//Quectel EC200&UC200's interface 0 can be used as USB Network device (ecm, rndis)
++		if (serial->interface->cur_altsetting->desc.bInterfaceClass != 0xFF)
++			return -ENODEV;
++			//QuectelEC25&EC21&EG91&EG95&EG06&EP06&EM06&BG96&AG35&EG12&EG18's //interface 4 can be used as USB network device (qmi,ecm,mbim)
++		if ((idProduct != 0x6026 && idProduct != 0x6126)
++			&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++			return -ENODEV;
++	}
++#endif   
+ 
+ 	/* Store device id so we can use it during attach. */
+ 	usb_set_serial_data(serial, (void *)id);

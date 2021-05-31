@@ -1,5 +1,5 @@
 config system
-	option hostname	Widora
+	option hostname	LoraWan
 	option timezone	CST-8
 
 config timeserver ntp

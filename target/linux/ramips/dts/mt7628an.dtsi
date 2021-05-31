@@ -149,7 +149,7 @@
 			#size-cells = <1>;
 
 			pinctrl-names = "default";
-			pinctrl-0 = <&spi_pins>;
+			pinctrl-0 = <&spi_pins>, <&spi_cs1_pins>; // add sx1302 spi support by zhaoyu at 2021.05.28
 
 			status = "disabled";
 		};

@@ -31,12 +31,16 @@
 			};
 			i2s {
 				ralink,group = "i2s";
-				ralink,function = "i2s";
+				ralink,function = "gpio"; // default:i2s 
 			};
-			spis {
-				ralink,group = "spis";
-				ralink,function = "gpio";
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "gpio"; // default:i2c
 			};
+			// spis { // delete: spis at 2021.05.29
+			// 	ralink,group = "spis";
+			// 	ralink,function = "gpio";
+			// };
 			wled_an {
 				ralink,group = "wled_an";
 				ralink,function = "wled_an";
@@ -53,10 +57,10 @@
 				ralink,group = "ephy_p3";
 				ralink,function = "gpio";
 			};
-			ephy_p4 {
-				ralink,group = "ephy_p4";
-				ralink,function = "gpio";
-			};
+			// ephy_p4 { // delete: ephy4 at 2021.05.29
+			// 	ralink,group = "ephy_p4";
+			// 	ralink,function = "gpio";
+			// };
 			wdt {
 				ralink,group = "wdt";
 				ralink,function = "gpio";
@@ -107,20 +111,24 @@
 				#size-cells = <1>;
 				compatible = "spidev";
 				reg = <1 0>;
-				spi-max-frequency = <40000000>;
+				spi-max-frequency = <1000000>;
 			};
 		};
 
 		i2c@900 {
-			status = "okay";
+			status = "disabled";
 		};
 
-		uart1@d00 {
+		uart1@d00 { // add: uart1 for rs485 at 2021.05.29
+			rts-gpio = <&gpio0 0 0>;
+			rs485-rts-active-high;
+			rs485-rts-delay = <0 0>;
+			linux,rs485-enabled-at-boot-time;
 			status = "okay";
 		};
 
 		uart2@e00 {
-			status = "okay";
+			status = "disabled";
 		};
 
 		pwm@5000 {
