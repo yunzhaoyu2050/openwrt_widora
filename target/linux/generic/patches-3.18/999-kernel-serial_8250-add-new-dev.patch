@@ -4,7 +4,7 @@
  #include <linux/serial_core.h>
  #include <linux/platform_device.h>
  
-+#if defined(CONFIG_LORAWAN_OPENWRT)
++#if 1
 +#include <linux/interrupt.h>
 +#endif
 +
@@ -15,7 +15,7 @@
  	void			(*dl_write)(struct uart_8250_port *, int);
  	int			(*rs485_config)(struct uart_8250_port *,
  						struct serial_rs485 *rs485);
-+#if defined(CONFIG_LORAWAN_OPENWRT)
++#if 1
 +    /* r485 */
 +    int r485_rts_gpio;
 +    //struct hrtimer r485_start_tx_timer;

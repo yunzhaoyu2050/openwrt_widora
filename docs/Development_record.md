@@ -3,7 +3,8 @@
 #### 生成补丁文件：
 
   diff -ruN option.c option_new.c > 999-kernel-option-add-new-dev.patch
-
+  diff -ruN mt7620.c.old mt7620.c > 999-kernel-mt7620-add-new-dev.patch
+  diff -ruN 8250_core.c.old 8250_core.c > 999-kernel-8250_core-add-new-dev.patch
 #### git 相关命令：
 
   git submodule update --init --recursive
@@ -46,9 +47,72 @@
 
   make HOST_CC="gcc -m32" CROSS=mipsel-openwrt-linux-uclibc-
 
-export STAGING_DIR=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/
-export PATH=$PATH:$STAGING_DIR/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
+  export STAGING_DIR=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/
+  
+  export PATH=$PATH:$STAGING_DIR/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
 
-make HOST_CC="gcc -m32" CROSS=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-uclibc-
+  make HOST_CC="gcc -m32" CROSS=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-uclibc-
 
-r = uv__dup3(oldfd, newfd, O_CLOEXEC);
+  r = uv__dup3(oldfd, newfd, O_CLOEXEC);
+
+  rs485部分代码：
+```
+          ret = dw8250_probe_rs485(uart, uart->port.dev->of_node); // add by zhaoyu for rs485
+          if (ret < 0)
+              return -ENOMEM;
+          uart->rs485_config = dw8250_config_rs485;
+```
+  关闭串口控制台
+  将$(TOPDIR)/target/linux/ramips/base-files/etc/inittab文件里的下面一句注释掉
+
+  ::askconsole:/bin/ash --login
+  $ vi $(TOPDIR)/target/linux/ramips/base-files/etc/inittab
+  ::sysinit:/etc/init.d/rcS S boot
+  ::shutdown:/etc/init.d/rcS K shutdown
+  #::askconsole:/bin/ash --login
+  关闭内核打印
+  在$(TOPDIR)/package/base-files/files/etc/config/system文件添加以下两句
+
+  option 'conloglevel' '1'
+  option 'kconloglevel' '1'
+  $ vi $(TOPDIR)/package/base-files/files/etc/config/system
+  复制代码
+  config system
+          option 'conloglevel' '1'
+          option 'kconloglevel' '1'
+          option hostname OpenWrt
+          option timezone UTC
+
+  config timeserver ntp
+          list server     0.openwrt.pool.ntp.org
+          list server     1.openwrt.pool.ntp.org
+          list server     2.openwrt.pool.ntp.org
+          list server     3.openwrt.pool.ntp.org
+          option enable_server 0
+  禁止kernel的输出较简单，重新编译镜像前，在make kernel_menuconfig时，选择Kernel hacking ----> 找到Early printk，将其取消选中，保存设置，make编译镜像即可。 http://docs.blackfin.uclinux.org/doku.php?id=linux-kernel:debug:early_printk
+  其他方法（在wr703n中均测试失败，网络上有人测试成功）：
+  1）在编译目录下找到./target/linux/<对应的平台>/config-3.3，找到文件中的CONFIG_CMDLINE去掉console=ttyATH0,115200，或者改成console=none，然后重新编译镜像。
+  2）因为kernel的message都是printk打印的，可以提高console的message打印级别，将/proc/sys/kernel/printk中第一个值改成0或者1：
+  echo 0 > /proc/sys/kernel/printk
+  cat /proc/sys/kernel/printk
+  0   4   1   7
+
+  或者在/etc/config/system下添加
+  option 'conloglevel' '1'
+  option 'kconloglevel' '1'
+
+  如果使用了后面的设置，前面的printk中的第一个值会被强制设置为system中的值。
+
+  ffmpeg功能：
+  > Multimedia
+    <*> ffmpeg.................................................... FFmpeg program
+
+  openssl功能：
+  > Utilities
+    <*> cryptsetup.................................................... Cryptsetup
+    <*> cryptsetup-openssl..................... Cryptsetup (with openssl support)
+    <*> openssl-util........................... Open source SSL toolkit (utility)
+
+  spi测试工具：
+  > Utilities
+    <*> spidev-test.......................................... SPI testing utility 

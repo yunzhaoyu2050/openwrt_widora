@@ -1,0 +1,16 @@
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -340,6 +340,13 @@
+ 	u32 rev;
+ 	u32 cfg0;
+ 
++#if 1
++	u32 cfg; // add by zhaoyu for change 5 lan to uart2 mode at 2021.06.03
++	cfg = __raw_readl(sysc + 0x3c);
++	cfg |= 0x0f<<17;
++	__raw_writel(cfg, sysc + 0x3c);
++#endif
++
+ 	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+ 	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
+ 

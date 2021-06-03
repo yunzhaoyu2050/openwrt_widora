@@ -1,25 +1,26 @@
---- a/drivers/tty/serial/8250/8250_core.c	2021-05-21 09:04:08.891079027 +0800
-+++ b/drivers/tty/serial/8250/8250_core.c	2021-05-25 16:15:06.000000000 +0800
-@@ -48,6 +48,14 @@
+--- a/drivers/tty/serial/8250/8250_core.c
++++ b/drivers/tty/serial/8250/8250_core.c
+@@ -48,6 +48,15 @@
  
  #include "8250.h"
  
-+#if defined(CONFIG_LORAWAN_OPENWRT)
++#if 1
 +#include <linux/serial.h>
 +#include <linux/gpio.h>
 +#include <linux/of_gpio.h>
 +#include <dt-bindings/gpio/gpio.h>
 +#include <linux/delay.h>
++static void serial8250_stop_rx(struct uart_port *port);
 +#endif
 +
  /*
   * Configuration:
   *   share_irqs - whether we pass IRQF_SHARED to request_irq().  This option
-@@ -1319,9 +1327,178 @@
+@@ -1319,9 +1328,179 @@
  	port->irq = (irq > 0) ? irq : 0;
  }
  
-+#if defined(CONFIG_LORAWAN_OPENWRT)
++#if 1
 +enum hrtimer_restart serial8250_r485_handle_stop_tx(struct hrtimer *t)
 +{
 +	struct uart_8250_port *p;
@@ -60,7 +61,7 @@
 +	
 +	if (p->ier & UART_IER_THRI) {
 +		p->ier &= ~UART_IER_THRI;
-+// #ifdef CONFIG_LORAWAN_OPENWRT
++// #ifdef 1
 +// 		p->ier &= ~UART_IER_PTIME;
 +// #endif
 +		serial_out(p, UART_IER, p->ier);
@@ -105,7 +106,7 @@
 +
 +	//pm_runtime_mark_last_busy(up->dev);
 +	//pm_runtime_put_autosuspend(up->dev);
-+    printk("config s485, uart%d, rst-gpio:%d.\n", up->port.line, up->r485_rts_gpio);
++	printk("config s485, uart%d, rst-gpio:%d.\n", up->port.line, up->r485_rts_gpio);
 +	return 0;
 +}
 +EXPORT_SYMBOL_GPL(dw8250_config_rs485);
@@ -118,19 +119,19 @@
 +	enum of_gpio_flags flags;
 +	int ret;
 +
-+    struct uart_8250_port *uart_p;
++	struct uart_8250_port *uart_p;
 +
-+    uart_p = serial8250_get_port(up->port.line);
-+    if (!uart_p) {
-+        return -ENODEV;
-+    }
++	uart_p = serial8250_get_port(up->port.line);
++	if (!uart_p) {
++		return -ENODEV;
++	}
 +    
 +	if (!np) {
 +		return 0;
 +	}
 +
-+    rs485conf = &uart_p->rs485;
-+    if (!(of_property_read_bool(np, "linux,rs485-enabled-at-boot-time")))
++	rs485conf = &uart_p->rs485;
++	if (!(of_property_read_bool(np, "linux,rs485-enabled-at-boot-time")))
 +		return 0;
 +
 +	rs485conf->flags = 0;
@@ -164,11 +165,12 @@
 +	if (of_property_read_bool(np, "rs485-rx-during-tx"))
 +		rs485conf->flags |= SER_RS485_RX_DURING_TX;
 +
-+    hrtimer_init(&uart_p->r485_stop_tx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-+    uart_p->r485_stop_tx_timer.function = serial8250_r485_handle_stop_tx;
++	hrtimer_init(&uart_p->r485_stop_tx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	uart_p->r485_stop_tx_timer.function = serial8250_r485_handle_stop_tx;
 +
-+    if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time"))
++	if (of_property_read_bool(np, "linux,rs485-enabled-at-boot-time"))
 +		rs485conf->flags |= SER_RS485_ENABLED;
++	printk("on dts: config s485, uart%d, rst-gpio:%d.\n", up->port.line, up->r485_rts_gpio);
 +	return 0;
 +}
 +EXPORT_SYMBOL_GPL(dw8250_probe_rs485);
@@ -177,28 +179,28 @@
  static inline void __stop_tx(struct uart_8250_port *p)
  {
  	if (p->ier & UART_IER_THRI) {
-+#if defined(CONFIG_LORAWAN_OPENWRT)
-+        if (p->rs485.flags & SER_RS485_ENABLED) {
-+            long usec = 1000; // 1ms // = p->char_time_us
-+            ktime_t t = ktime_set(usec/1000000, usec%1000000 * 1000);
++#if 1
++		if (p->rs485.flags & SER_RS485_ENABLED) {
++			long usec = 1000; // 1ms // = p->char_time_us
++			ktime_t t = ktime_set(usec/1000000, usec%1000000 * 1000);
 +
-+            if (p->r485_active_timer == &p->r485_stop_tx_timer) {
-+                // timeout
-+                hrtimer_forward_now(&p->r485_stop_tx_timer, t);
-+            } else {
-+                hrtimer_start(&p->r485_stop_tx_timer, t, HRTIMER_MODE_REL);
-+                p->r485_active_timer = &p->r485_stop_tx_timer;
-+            }
-+        }
++			if (p->r485_active_timer == &p->r485_stop_tx_timer) {
++				// timeout
++				hrtimer_forward_now(&p->r485_stop_tx_timer, t);
++			} else {
++				hrtimer_start(&p->r485_stop_tx_timer, t, HRTIMER_MODE_REL);
++				p->r485_active_timer = &p->r485_stop_tx_timer;
++			}
++		}
 +#endif
  		p->ier &= ~UART_IER_THRI;
  		serial_out(p, UART_IER, p->ier);
  		serial8250_rpm_put_tx(p);
-@@ -1332,6 +1509,38 @@
+@@ -1332,6 +1511,38 @@
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
  
-+#if defined(CONFIG_LORAWAN_OPENWRT)
++#if 1
 +    // Will not enter during testing ...
 +	int res;
 +	// uart for 485
@@ -233,41 +235,39 @@
  	serial8250_rpm_get(up);
  	__stop_tx(up);
  
-@@ -1348,6 +1557,27 @@
- static void serial8250_start_tx(struct uart_port *port)
+@@ -1349,6 +1560,27 @@
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
-+	
-+#if defined(CONFIG_LORAWAN_OPENWRT)
+ 
++#if 1
 +    // uart for 485
 +	if (up->rs485.flags & SER_RS485_ENABLED) {
 +		up->r485_active_timer = NULL;
-+        if (up->rs485.flags & SER_RS485_RTS_ON_SEND) {
-+            if (up->rs485.delay_rts_before_send > 0) {
-+                mdelay(up->rs485.delay_rts_before_send);
-+            }
-+            
-+            if (gpio_is_valid(up->r485_rts_gpio))
-+                gpio_set_value(up->r485_rts_gpio, 1);
-+            else
-+                gpio_set_value(up->r485_rts_gpio, 0);
-+        }
++		if (up->rs485.flags & SER_RS485_RTS_ON_SEND) {
++				if (up->rs485.delay_rts_before_send > 0) {
++						mdelay(up->rs485.delay_rts_before_send);
++				}
++				
++				if (gpio_is_valid(up->r485_rts_gpio))
++						gpio_set_value(up->r485_rts_gpio, 1);
++				else
++						gpio_set_value(up->r485_rts_gpio, 0);
++		}
 +	}
 +
 +	if ((up->rs485.flags & SER_RS485_ENABLED) &&
 +	    !(up->rs485.flags & SER_RS485_RX_DURING_TX))
 +		serial8250_stop_rx(port);
 +#endif
- 
++
  	serial8250_rpm_get_tx(up);
  	if (up->dma && !serial8250_tx_dma(up)) {
-@@ -2468,7 +2698,31 @@
- 	 * Update the per-port timeout.
+ 		return;
+@@ -2469,6 +2701,31 @@
  	 */
  	uart_update_timeout(port, termios->c_cflag, baud);
--
-+	
-+#if defined(CONFIG_LORAWAN_OPENWRT)
+ 
++#if 1
 +	{
 +		int bits;
 +        switch (termios->c_cflag & CSIZE) {
@@ -291,6 +291,21 @@
 +		up->char_time_us = 1000000 * bits / baud + 1;
 +	}
 +#endif
++
  	port->read_status_mask = UART_LSR_OE | UART_LSR_THRE | UART_LSR_DR;
  	if (termios->c_iflag & INPCK)
  		port->read_status_mask |= UART_LSR_FE | UART_LSR_PE;
+@@ -3625,6 +3882,13 @@
+ 		if (up->dma)
+ 			uart->dma = up->dma;
+ 
++#if 1
++		ret = dw8250_probe_rs485(uart, uart->port.dev->of_node); // add by zhaoyu for rs485
++		if (ret < 0)
++				return -ENOMEM;
++		uart->rs485_config = dw8250_config_rs485;
++#endif
++
+ 		if (serial8250_isa_config != NULL)
+ 			serial8250_isa_config(0, &uart->port,
+ 					&uart->capabilities);
