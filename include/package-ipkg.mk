@@ -184,6 +184,9 @@ $(_endef)
 		done; $(Package/$(1)/extra_provides) \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
 	$(if $(PROVIDES),@for pkg in $(PROVIDES); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
+	@(if [ ! -f $(PKG_INFO_DIR)/../../../staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_glibc-2.21/lib/libc.so.0 ];then \
+			ln -ns libc-2.21.so $(PKG_INFO_DIR)/../../../staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_glibc-2.21/lib/libc.so.0; \
+		fi)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))

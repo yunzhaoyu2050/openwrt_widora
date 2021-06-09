@@ -10,7 +10,7 @@ config interface lan
 	option ifname	eth0
 	option type 	bridge
 	option proto	static
-	option ipaddr	192.168.8.1
+	option ipaddr	192.168.11.1
 	option netmask	255.255.255.0
 	option ip6assign 60
 config interface wan
@@ -18,3 +18,13 @@ config interface wan
 	option proto	dhcp
 config globals globals
 	option ula_prefix auto
+
+config interface 'T2N'
+	option proto 't2n'
+	option server '106.12.253.52'
+	option port '6051'
+	option community '868618058988262'
+	option key '12345678'
+	option mode 'static'
+	option ipaddr '11.5.0.0'
+	option netmask '255.255.0.0'

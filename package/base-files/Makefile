@@ -34,6 +34,7 @@ define Package/base-files
   DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:usign
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
+	DEPENDS:=+libpthread +librt
   VERSION:=$(PKG_RELEASE)-$(REVISION)
 endef
 

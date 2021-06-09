@@ -50,6 +50,9 @@
   export STAGING_DIR=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/
   
   export PATH=$PATH:$STAGING_DIR/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
+  export PATH=$PATH:$STAGING_DIR/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_glibc-2.21/bin
+
+  make tiny CFLAGS="-ldl" CC=mipsel-openwrt-linux-gcc
 
   make HOST_CC="gcc -m32" CROSS=/home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-uclibc-
 
@@ -116,3 +119,15 @@
   spi测试工具：
   > Utilities
     <*> spidev-test.......................................... SPI testing utility 
+
+修改banner.
+  临时修改
+  /etc/banner
+
+  永久修改
+  openwrt_widora/package/base-files/files/etc/banner
+
+1.4g 电源口 boot中启动， kernel-led模拟。gpio
+2.glibc getaddrinfo_a -> uclibc 
+
+# t2n 安装至 /usr/sbin/ 之后整理验证

@@ -184,7 +184,7 @@ int serial_init(char *dev_path, int speed, int is_block)
   return fd;
 }
 
-#define TTYS_485_DEV_PATH "/dev/ttyS1" // default dev
+#define TTYS_485_DEV_PATH "/dev/ttyS0" // default dev
 
 int main(int argc, const char *argv[])
 {
@@ -196,15 +196,15 @@ int main(int argc, const char *argv[])
 
   int fd = serial_init(TTYS_485_DEV_PATH, 9600, 1);
   int ret = 0;
-  struct serial_rs485 rs485conf;
-  rs485conf.flags |= SER_RS485_ENABLED;
-  rs485conf.flags |= SER_RS485_RTS_ON_SEND;
-  rs485conf.flags |= SER_RS485_RTS_AFTER_SEND;
-  ret = ioctl(fd, TIOCSRS485, &rs485conf);
-  if (ret < 0) {
-    printf("error: ioctl rs485 failed. ret:%d, err:%d.\r\n", ret, errno);
-    return -1;
-  }
+  // struct serial_rs485 rs485conf;
+  // rs485conf.flags |= SER_RS485_ENABLED;
+  // rs485conf.flags |= SER_RS485_RTS_ON_SEND;
+  // rs485conf.flags |= SER_RS485_RTS_AFTER_SEND;
+  // ret = ioctl(fd, TIOCSRS485, &rs485conf);
+  // if (ret < 0) {
+  //   printf("error: ioctl rs485 failed. ret:%d, err:%d.\r\n", ret, errno);
+  //   return -1;
+  // }
   char send_buf[64] = "123456789abcdefghigklmnopqrstuvwlllllllll";
   char read_buf[64] = {0};
   printf("info: write <%s>, sleep 1s loop.\r\n", send_buf);

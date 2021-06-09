@@ -49,10 +49,10 @@
 				ralink,group = "ephy_p1";
 				ralink,function = "gpio";
 			};
-			// ephy_p2 {	// delete: ephy2 at 2021.06.03
-			// 	ralink,group = "ephy_p2";
-			// 	ralink,function = "gpio";
-			// };
+			ephy_p2 {	// delete: ephy2 at 2021.06.03
+				ralink,group = "ephy_p2";
+				ralink,function = "gpio";
+			};
 			ephy_p3 {
 				ralink,group = "ephy_p3";
 				ralink,function = "gpio";
@@ -119,6 +119,14 @@
 			status = "disabled";
 		};
 
+		uartlite@c00 {
+			rts-gpio = <&gpio0 11 0>;
+			rs485-rts-active-high;
+			rs485-rts-delay = <0 0>;
+			linux,rs485-enabled-at-boot-time;
+			status = "okay";
+		};
+
 		uart1@d00 { // add: uart1 for rs485 at 2021.05.29
 			rts-gpio = <&gpio0 0 0>;
 			rs485-rts-active-high;
@@ -133,6 +141,22 @@
 
 		pwm@5000 { // update: pwm off at 2021.06.03
 			status = "disabled";
+		};
+
+		gpio-leds {
+			compatible = "gpio-leds";
+			online {
+				label = "rtu:online";
+				gpios = <&gpio1 15 1>;
+			};
+			lora {
+				label = "rtu:lora";
+				gpios = <&gpio1 14 1>;
+			};
+			ec20xpower {
+				label = "rtu:ec20xpower";
+				gpios = <&gpio1 5 1>;
+			};
 		};
 	};
 
