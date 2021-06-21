@@ -49,7 +49,7 @@
 +		if (serial->interface->cur_altsetting->desc.bInterfaceClass != 0xFF)
 +			return -ENODEV;
 +			//QuectelEC25&EC21&EG91&EG95&EG06&EP06&EM06&BG96&AG35&EG12&EG18's //interface 4 can be used as USB network device (qmi,ecm,mbim)
-+		if ((idProduct != 0x6026 && idProduct != 0x6126)
++		if ((idProduct != 0x6026 && idProduct != 0x6126 && idProduct != 0x6002)
 +			&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
 +			return -ENODEV;
 +	}

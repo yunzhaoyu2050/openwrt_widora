@@ -18,10 +18,10 @@
 include $(TOPDIR)/rules.mk
  
 # Name and release number of this package
-PKG_NAME:=self_dev_soft
+PKG_NAME:=luvi
 PKG_RELEASE:=1
-RSTRIP:=:
-
+# STRIP=/bin/true
+ 
 # This specifies the directory where we're going to build the program. 
 # The root build directory, $(BUILD_DIR), is by default the build_mipsel
 # directory in your OpenWrt SDK directory
@@ -35,18 +35,15 @@ include $(INCLUDE_DIR)/package.mk
 # If you are running Kamikaze, delete the DESCRIPTION
 # variable below and uncomment the Kamikaze define
 # directive for the description below
-define Package/self_dev_soft
+define Package/luvi
 	SECTION:=utils
 	CATEGORY:=Utilities
-	TITLE:=self_dev_software
-	DEPENDS:=+libpthread +librt
+	TITLE:=luvi
 endef
-
 # Uncomment portion below for Kamikaze and delete DESCRIPTION variable above
-define Package/self_dev_soft/description
-	self_dev_software for openwrt
+define Package/luvi/description
+	luvi for openwrt
 endef
-
 # Specify what needs to be done to prepare for building the package.
 # In our case, we need to copy the source files to the build directory.
 # This is NOT the default.  The default uses the PKG_SOURCE_URL and the
@@ -54,18 +51,23 @@ endef
 # In order to just build a simple program that we have just written, it is
 # much easier to do it this way.
 define Build/Prepare
-	@echo prepare...
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./system/* $(PKG_BUILD_DIR)/
+	$(CP) ./luvi/* $(PKG_BUILD_DIR)/
 endef
-
 define Build/Configure
 endef
-
+# USER_LDFLAGS:=/home/user/zhaoyu/lorawan/openwrt_widora/./staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib/ld-uClibc.so.0
 define Build/Compile
-	@echo build none...
+	@echo build...
+	$(MAKE) tiny -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -Wall -ldl" \
+		LDFLAGS="$(TARGET_LDFLAGS)"
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -Wall -ldl" \
+		LDFLAGS="$(TARGET_LDFLAGS)"
 endef
-
 # We do not need to define Build/Configure or Build/Compile directives
 # The defaults are appropriate for compiling a simple program such as this one
 # Specify where and how to install the program. Since we only have one file,
@@ -75,33 +77,11 @@ endef
 # directory if it does not already exist.  Likewise $(INSTALL_BIN) contains the
 # command to copy the binary file from its current location (in our case the build
 # directory) to the install directory.
-define Package/self_dev_soft/install
-	@echo install...
-	$(INSTALL_DIR) $(1)/usr/bin
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/t2n $(1)/usr/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/luvit $(1)/usr/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/getImei $(1)/usr/bin/
-
-	$(INSTALL_DIR) $(1)/etc/config/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/network $(1)/etc/config/
-
-	# $(INSTALL_DIR) $(1)/etc/init.d
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/init.d/t2napp $(1)/etc/init.d/
-	# $(INSTALL_DIR) $(1)/etc/rc.d
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/rc.d/S99t2napp $(1)/etc/rc.d/
-
-	# $(INSTALL_DIR) $(1)/lib/netifd/proto
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/netifd/proto/t2n.sh $(1)/lib/netifd/proto/
-
-	# $(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/admin_network/
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/usr/lib/lua/luci/model/cbi/admin_network/proto_t2n.lua $(1)/usr/lib/lua/luci/model/cbi/admin_network/
-
-	# $(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/network/
-	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/usr/lib/lua/luci/model/network/proto_t2n.lua $(1)/usr/lib/lua/luci/model/network/
+define Package/luvi/install
+	@echo no install...
 endef
-
 # This line executes the necessary commands to compile our program.
 # The above define directives specify all the information needed, but this
 # line calls BuildPackage which in turn actually uses this information to
 # build a package.
-$(eval $(call BuildPackage,self_dev_soft))
+$(eval $(call BuildPackage,luvi))
