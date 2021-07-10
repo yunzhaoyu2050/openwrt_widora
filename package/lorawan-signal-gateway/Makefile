@@ -18,7 +18,7 @@
 include $(TOPDIR)/rules.mk
  
 # Name and release number of this package
-PKG_NAME:=lorwan-gateway
+PKG_NAME:=lorwan-signal-gateway
 PKG_RELEASE:=1
  
 # This specifies the directory where we're going to build the program. 
@@ -34,14 +34,14 @@ include $(INCLUDE_DIR)/package.mk
 # If you are running Kamikaze, delete the DESCRIPTION
 # variable below and uncomment the Kamikaze define
 # directive for the description below
-define Package/lorwan-gateway
+define Package/lorwan-signal-gateway
 	SECTION:=utils
 	CATEGORY:=Utilities
-	TITLE:=lorwan-gateway
+	TITLE:=lorwan-signal-gateway
 endef
 # Uncomment portion below for Kamikaze and delete DESCRIPTION variable above
-define Package/lorwan-gateway/description
-	lorwan-gateway for openwrt
+define Package/lorwan-signal-gateway/description
+	lorwan-signal-gateway for openwrt
 endef
 # Specify what needs to be done to prepare for building the package.
 # In our case, we need to copy the source files to the build directory.
@@ -51,16 +51,15 @@ endef
 # much easier to do it this way.
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./sx1302_hal/* $(PKG_BUILD_DIR)/
+	$(CP) ./lora_pkt_fwd/* $(PKG_BUILD_DIR)/
 endef
 define Build/Configure
 endef
 define Build/Compile
-	@echo build...
+	@echo build lorwan-signal-gateway...
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -Wall" \
-		LDFLAGS="$(TARGET_LDFLAGS)"
+		CFLAGS="$(TARGET_CFLAGS) -Wall" 
 endef
 # We do not need to define Build/Configure or Build/Compile directives
 # The defaults are appropriate for compiling a simple program such as this one
@@ -71,14 +70,14 @@ endef
 # directory if it does not already exist.  Likewise $(INSTALL_BIN) contains the
 # command to copy the binary file from its current location (in our case the build
 # directory) to the install directory.
-define Package/lorwan-gateway/install
-	@echo install to $(PKG_BUILD_DIR)...
-	$(MAKE) install -C $(PKG_BUILD_DIR)
-	@echo install_conf to $(PKG_BUILD_DIR)...
-	$(MAKE) install_conf -C $(PKG_BUILD_DIR)
+define Package/lorwan-signal-gateway/install
+	# @echo install to $(PKG_BUILD_DIR)...
+	# $(MAKE) install -C $(PKG_BUILD_DIR)
+	# @echo install_conf to $(PKG_BUILD_DIR)...
+	# $(MAKE) install_conf -C $(PKG_BUILD_DIR)
 endef
 # This line executes the necessary commands to compile our program.
 # The above define directives specify all the information needed, but this
 # line calls BuildPackage which in turn actually uses this information to
 # build a package.
-$(eval $(call BuildPackage,lorwan-gateway))
+$(eval $(call BuildPackage,lorwan-signal-gateway))

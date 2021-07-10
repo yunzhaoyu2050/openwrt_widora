@@ -5,6 +5,7 @@
   diff -ruN option.c option_new.c > 999-kernel-option-add-new-dev.patch
   diff -ruN mt7620.c.old mt7620.c > 999-kernel-mt7620-add-new-dev.patch
   diff -ruN 8250_core.c.old 8250_core.c > 999-kernel-8250_core-add-new-dev.patch
+  diff -ruN sd.c.old sd.c.new > 999-kernel-sd-add-new-dev.patch
 #### git 相关命令：
 
   git submodule update --init --recursive
@@ -131,3 +132,16 @@
 2.glibc getaddrinfo_a -> uclibc 
 
 # t2n 安装至 /usr/sbin/ 之后整理验证
+
+
+# 修改默认密码为 mcxa@.2204
+
+# wifi检测
+
+test: wpa_passphrase "ChinaNet-xRqu" "dughk9gm"
+
+1.扫描周围AP列表，命令：aps
+
+2.链接其他wifi，命令：wifimode apsta ssid key， 检查链接是否成功：ap_client
+
+3.检查客户端连接，命令：iwpriv ra0 show stainfo, dmesg查看结果

@@ -1,0 +1,69 @@
+--- a/drivers/mmc/host/mtk-mmc/sd.c
++++ b/drivers/mmc/host/mtk-mmc/sd.c
+@@ -553,7 +553,12 @@
+     schedule_delayed_work(&host->card_delaywork, HZ);
+ #endif
+ }
+-
++// --------------------------- add sd power control start
++#include <linux/of_gpio.h>
++#define CD_PIN_GPIO 39
++int g_power_pin_gpio = -1; // power 控制引脚
++int g_power_pin_en_low = 0;
++// --------------------------- add sd power control end
+ #if 0
+ static void msdc_tasklet_card(unsigned long arg)
+ {
+@@ -581,7 +586,25 @@
+ 	else
+ 	        inserted = (status & MSDC_PS_CDSTS) ? 1 : 0;
+     }
+-
++    // --------------------------- add sd power control start
++    if (inserted) {
++        if (gpio_is_valid(g_power_pin_gpio)) {
++            gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 0 : 1));
++        } else {
++            printk(KERN_ERR "[sd] parse power gpio failed, please check\n");
++        }
++        gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 0 : 1));
++        printk(KERN_INFO "[sd] high power gpio, sd card power on...\n");
++    } else {
++        if (gpio_is_valid(g_power_pin_gpio)) {
++            gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 1 : 0));
++        } else {
++            printk(KERN_ERR "[sd] parse power gpio failed, please check\n");
++        }
++        gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 1 : 0));
++        printk(KERN_INFO "[sd] low power gpio, sd card power down...\n");
++    }
++    // --------------------------- add sd power control end
+ #if 0
+     change = host->card_inserted ^ inserted;
+     host->card_inserted = inserted;
+@@ -2782,7 +2805,24 @@
+ 
+ 	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "mediatek,cd-high");
+ 	mtk_sw_poll = of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll");
+-
++    // --------------------------- add sd power control start
++    g_power_pin_gpio = of_get_named_gpio(pdev->dev.of_node, "power,pin", 0);
++    printk(KERN_INFO "get sd power gpio(%d)\n", g_power_pin_gpio);
++    g_power_pin_en_low = of_property_read_bool(pdev->dev.of_node, "power,low");
++    // sd det gpio - 23, 高电平说明sd卡拔出 低电平说明sd卡插入
++    #define SD_DET_PIN_GPIO 23
++    if (gpio_is_valid(SD_DET_PIN_GPIO)) {
++        if(!gpio_get_value(SD_DET_PIN_GPIO)) {
++            gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 0 : 1));
++            printk(KERN_INFO "[sd] high power gpio, sd card power on...\n");
++        } else {
++            gpio_direction_output(g_power_pin_gpio, (g_power_pin_en_low ? 1 : 0));
++            printk(KERN_INFO "[sd] low power gpio, sd card power down...\n");
++        }
++    } else {
++        printk(KERN_ERR "[sd] parse power gpio failed, please check\n");
++    }
++    // --------------------------- add sd power control end
+ 	if (mtk_sw_poll)
+ 		mmc->caps |= MMC_CAP_NEEDS_POLL;
+ 

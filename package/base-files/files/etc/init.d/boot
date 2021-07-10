@@ -58,4 +58,20 @@ boot() {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
+
+	# check and delete
+	#if [[ ! -f "/etc/imei" ]]; then
+		local imei_resp=$(/usr/bin/getImei)
+		if [[ ${imei_resp:0:5} == "IMEI:" ]]; then
+			IMEI=${imei_resp:5:15}
+			echo $IMEI > "/etc/imei"
+			uci set wireless.@wifi-iface[0].ssid=MC_${IMEI:9:6}
+			uci set network.T2N.community=$IMEI
+			uci commit
+			# /etc/init.d/network restart
+		elif [[ ${imei_resp:0:6} == "ERROR:" ]]; then
+			ERR=${imei_resp:6:-1}
+			echo $ERR
+		fi
+	#fi
 }

@@ -83,6 +83,9 @@ define Package/self_dev_soft/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/getImei $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/config/
+
+	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/network_ppp $(1)/etc/config/network
+	cp $(PKG_BUILD_DIR)/etc/config/network_rndis $(PKG_BUILD_DIR)/etc/config/network
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/network $(1)/etc/config/
 
 	# $(INSTALL_DIR) $(1)/etc/init.d

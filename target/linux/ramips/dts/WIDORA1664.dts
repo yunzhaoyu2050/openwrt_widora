@@ -3,8 +3,8 @@
 /include/ "mt7628an.dtsi"
 
 / {
-	compatible = "widora", "mediatek,mt7628an-soc";
-	model = "WIDORA-BIT5";
+	compatible = "mc7628", "mediatek,mt7628an-soc";
+	model = "Mc7628-G";
 
 	chosen { // update: delete output kernel info at 2021.06.03
 		bootargs = "console=none"; // ttyS0,115200
@@ -65,7 +65,6 @@
 				ralink,group = "wdt";
 				ralink,function = "gpio";
 			};
-			
 			// sdmode {
 			// 	ralink,group = "sdmode";
 			// 	ralink,function = "gpio";
@@ -176,6 +175,8 @@
 	sdhci@10130000 {
 		status = "okay";
 		mediatek,cd-low;
+		power,low;
+		power,pin = <&gpio1 7 1>; // 39 gpio
 	};
 
 	gpio-keys-polled {

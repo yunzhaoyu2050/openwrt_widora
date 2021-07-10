@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+
+START=98
+
+start() {
+  if [ -b "/dev/mmcblk0p1" ]; then
+    echo "find sd device, and mount sd card start..."
+    mkdir -p /mnt/sd
+    mount -t vfat /dev/mmcblk0p1 /mnt/sd
+    # udevd --daemon
+    # udevstart
+  fi
+}

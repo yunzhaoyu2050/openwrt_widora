@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #include <linux/time.h>
 #include <sys/time.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -77,14 +76,9 @@ static uint32_t bl0939_read_reg(int fd, uint8_t reg) {
 }
 static int bl0939_write_reg(int fd, uint8_t reg, uint32_t val, int check) {
     static uint32_t r_temp = 0;
-    // int i = 5;
     uint8_t h = val >> 16;
     uint8_t m = val >> 8;
     uint8_t l = val >> 0;
-    // do{
-    // 	i--;
-    // 	HAL_Delay(5);
-    //  bl0939_spi_reset();
     uint8_t tx[6] = {0xA5, reg, h, m, l, ~(0XA5 + reg + h + m + l)};
     struct spi_ioc_transfer tr[1] = {{
         .tx_buf = (unsigned long)tx,
@@ -98,20 +92,15 @@ static int bl0939_write_reg(int fd, uint8_t reg, uint32_t val, int check) {
     int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
     if (ret < 1)
         pabort("can't send spi message");
-
-    // HAL_SPI_Transmit(&hspi1,tx_buf,6,0xfff);
-    // HAL_Delay(10);
     if (0 == check)
         return 0;
     r_temp = bl0939_read_reg(fd, reg);
     if (r_temp == val)
         return 0;
-    // }while(i>0);
     return 1;
 }
 static void bl0939_spi_reset(int fd) {
     uint8_t tx[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-    // HAL_SPI_Transmit(&hspi1,tx_buf,6,0xfff);
     struct spi_ioc_transfer tr[1] = {{
         .tx_buf = (unsigned long)tx,
         // .rx_buf = (unsigned long)rx,
@@ -139,70 +128,18 @@ static void bl0939_reset(int fd) {
     bl0939_write_reg(fd, 0x1a, 0x00000000, 1);  //写保护
 }
 static uint32_t bl0939_get_current_A(int fd) {
-    // bl0939_spi_reset(fd);
     uint32_t Ia = bl0939_read_reg(fd, 0x00);
-    //	return Ia * 1.218f / (float) ( 324004 * 1 );
     return Ia;
 }
 static uint32_t bl0939_get_current_B(int fd) {
-    // bl0939_spi_reset(fd);
     uint32_t Ib = bl0939_read_reg(fd, 0x07);
-    //	return Ib * 1.218f / (float) ( 324004 * 1 );
     return Ib;
 }
 static uint32_t bl0939_get_voltage(int fd) {
-    // bl0939_spi_reset(fd);
     uint32_t v = bl0939_read_reg(fd, 0x06);
-    //	return v * 1.218f * ( 2 + 2000 ) / (float) ( 79931 * 2 * 1000 );
     return v;
 }
 // -------------------------------------------------------------bl0939 func end
-
-// static void transfer(int fd) {
-//     int ret;
-//     uint8_t tx[] = {
-//         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x40, 0x00, 0x00, 0x00, 0x00, 0x95, 0xFF,
-//         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-//         0xFF, 0xFF, 0xFF, 0xFF, 0xDE, 0xAD, 0xBE, 0xEF, 0xBA, 0xAD, 0xF0, 0x0D,
-//     };
-//     uint8_t rx[ARRAY_SIZE(tx)] = {
-//         0,
-//     };
-//     struct spi_ioc_transfer tr = {
-//         .tx_buf = (unsigned long)tx,
-//         .rx_buf = (unsigned long)rx,
-//         .len = ARRAY_SIZE(tx),
-//         .delay_usecs = delay,
-//         .speed_hz = speed,
-//         .bits_per_word = bits,
-//     };
-
-//     if (mode & SPI_TX_QUAD)
-//         tr.tx_nbits = 4;
-//     else if (mode & SPI_TX_DUAL)
-//         tr.tx_nbits = 2;
-//     if (mode & SPI_RX_QUAD)
-//         tr.rx_nbits = 4;
-//     else if (mode & SPI_RX_DUAL)
-//         tr.rx_nbits = 2;
-//     if (!(mode & SPI_LOOP)) {
-//         if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
-//             tr.rx_buf = 0;
-//         else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
-//             tr.tx_buf = 0;
-//     }
-
-//     ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-//     if (ret < 1)
-//         pabort("can't send spi message");
-
-//     for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
-//         if (!(ret % 6))
-//             puts("");
-//         printf("%.2X ", rx[ret]);
-//     }
-//     puts("");
-// }
 
 static void print_usage(const char *prog) {
     printf("Usage: %s [-Dth]\n", prog);
@@ -322,16 +259,6 @@ int main(int argc, char *argv[]) {
     ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
     if (ret == -1)
         pabort("can't get max speed hz");
-
-    // transfer(fd);
-
-    // loop
-    // fd_set recvfd,tempfd;
-    // FD_ZERO(&recvfd);
-    // FD_ZERO(&tempfd);
-    // FD_SET(fd,&recvfd);
-    // FD_SET(STDIN_FILENO,&recvfd);
-    // int maxid=(server_sock>STDIN_FILENO ? server_sock+1:STDIN_FILENO+1);
 
     struct timeval timeout;
     uint8_t keep_run = 0;

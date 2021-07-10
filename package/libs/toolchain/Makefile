@@ -326,6 +326,7 @@ endif
 
 ifneq ($(BUILD_LIBGCC),)
   define Build/Compile/uClibc
+	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> @"
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libc_so.a)" \

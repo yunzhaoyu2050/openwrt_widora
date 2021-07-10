@@ -25,9 +25,10 @@ proto_t2n_setup() {
                           $([ -n "$mgmtport" ] && echo -t $mgmtport) \
                           $([ "$multicast" = 1 ] && echo -E) \
                           $([ "$verbose" = 1 ] && echo -v -v -v) \
-                -S /usrdata/reconnect.sh \
-                -P 24 \
-                -L /root/t2n.log
+                -S /root/reconnect.sh \
+                -P 36 \
+                -D /dev/ttyUSB1 -v \
+		-L /mnt/sd/log/t2nRunlog.log
 
         #proto_init_update "$device" 1
         #proto_set_keep 1

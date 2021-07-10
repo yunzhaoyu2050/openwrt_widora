@@ -14,5 +14,4 @@ export PATH=$PATH:$STAGING_DIR/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-
 
 /home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-uclibc-gcc -O2 -Wall spidev_select_bl0939.c -o spidev_bl0939
 
-
 /home/user/zhaoyu/lorawan/kernel/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-uclibc-gcc -O2 -Wall getImei.c -o getImei
