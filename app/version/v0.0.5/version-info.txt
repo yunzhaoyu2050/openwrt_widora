@@ -1,0 +1,13 @@
+uboot固件：uboot_v0.0.2.bin
+版本号：v0.0.2
+版本说明：
+1、添加升级状态指示灯，36-gpio管脚
+
+系统固件：openwrt-ramips-mt7688-MC7628_G-squashfs-sysupgrade_v0.0.5.bin
+版本号：v0.0.5
+版本说明：
+1、添加sd卡功能
+2、t2n部分	修改reconnect.sh脚本移动至/usr/bin/reconnect.sh位置
+			修改log移动至/mnt/sd/log/t2nRunlog.log位置
+3、rndis网口为测试功能
+4、wlan网口为测试功能

@@ -65,7 +65,7 @@ boot() {
 		if [[ ${imei_resp:0:5} == "IMEI:" ]]; then
 			IMEI=${imei_resp:5:15}
 			echo $IMEI > "/etc/imei"
-			uci set wireless.@wifi-iface[0].ssid=MC_${IMEI:9:6}
+			uci set wireless.@wifi-iface[0].ssid=MC-${IMEI:9:6}
 			uci set network.T2N.community=$IMEI
 			uci commit
 			# /etc/init.d/network restart

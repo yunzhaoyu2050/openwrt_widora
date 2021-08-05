@@ -81,12 +81,19 @@ define Package/self_dev_soft/install
 	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/t2n $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/luvit $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/getImei $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/reconnect.sh $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/config/
 
+	# 测试rndis
 	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/network_ppp $(1)/etc/config/network
 	cp $(PKG_BUILD_DIR)/etc/config/network_rndis $(PKG_BUILD_DIR)/etc/config/network
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/network $(1)/etc/config/
+
+	# 界面配置成中文默认
+	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/luci_en $(1)/etc/config/luci
+	cp $(PKG_BUILD_DIR)/etc/config/luci_zh $(PKG_BUILD_DIR)/etc/config/luci
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/config/luci $(1)/etc/config/
 
 	# $(INSTALL_DIR) $(1)/etc/init.d
 	# $(INSTALL_BIN) $(PKG_BUILD_DIR)/etc/init.d/t2napp $(1)/etc/init.d/

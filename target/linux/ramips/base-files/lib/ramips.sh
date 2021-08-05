@@ -433,7 +433,7 @@ ramips_board_detect() {
 	*"WIDORA-BIT5")
 		name="widora-bit5"
 		;;
-	*"Mc7628-G")
+	*"MC7628_G")
 		name="mc7628-g"
 		;;
 	*"MediaTek LinkIt Smart 7688")

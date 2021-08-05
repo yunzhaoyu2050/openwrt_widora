@@ -26,7 +26,7 @@ config switch
 	option enable_vlan '0'
 
 config switch_vlan
-	option device 'switch0'
+	option device 'switch0'	
 	option vlan '1'
 	option ports '1 2 3 4 6t'
 
@@ -40,6 +40,8 @@ config interface '4g'
 	option device '/dev/ttyUSB1'
 	option service 'umts'
 	option apn 'cmiot'
+	option metric '101'
+	option keepalive '3 5'
 
 config interface 'T2N'
 	option proto 't2n'
@@ -49,9 +51,15 @@ config interface 'T2N'
 	option mode 'static'
 	option ipaddr '11.5.0.0'
 	option netmask '255.255.0.0'
-	option community '868618058773359'
+	option community '868618059000570'
 
 config interface 'rndis'
 	option proto 'dhcp'
 	option ifname 'usb0'
 	option auto '0'
+
+config interface 'wlan'
+	option ifname 'apcli0'
+	option _orig_ifname 'apcli0'
+	option _orig_bridge 'false'
+	option proto 'dhcp'

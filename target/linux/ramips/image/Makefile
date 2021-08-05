@@ -1033,13 +1033,16 @@ Image/Build/Profile/WIDORA1664=$(call BuildFirmware/Default16M/$(1),$(1),WIDORA1
 Image/Build/Profile/WIDORA864=$(call BuildFirmware/Default8M/$(1),$(1),WIDORA864,WIDORA864)
 Image/Build/Profile/WIDORA3264=$(call BuildFirmware/Default32M/$(1),$(1),WIDORA3264,WIDORA3264)
 
+Image/Build/Profile/MC7628_G=$(call BuildFirmware/Default16M/$(1),$(1),MC7628_G,MC7628_G) # add mc7268-g board
+
 ifeq ($(SUBTARGET),mt7628)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MT7688,$(1))
 	$(call Image/Build/Profile/LinkIt7688,$(1))
 	$(call Image/Build/Profile/WIDORA16128,$(1))
 	$(call Image/Build/Profile/WIDORA32128,$(1))
-	$(call Image/Build/Profile/WIDORA1664,$(1))
+	$(call Image/Build/Profile/WIDORA1664,$(1)) # add mc7268-g board
+	$(call Image/Build/Profile/MC7628_G,$(1))
 	$(call Image/Build/Profile/WIDORA864,$(1))
 	$(call Image/Build/Profile/WIDORA3264,$(1))
 endef

@@ -4,7 +4,9 @@ config system
 	option hostname	MC7628
 	option timezone	CST-8
 	option cronloglevel '8'
-
+	option log_size '64'
+	option log_file '/var/log/message.log'
+	
 config timeserver ntp
 	list server	0.openwrt.pool.ntp.org
 	list server	1.openwrt.pool.ntp.org

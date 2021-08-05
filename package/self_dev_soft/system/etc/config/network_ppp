@@ -13,9 +13,11 @@ config interface 'lan'
 	option macaddr '00:00:00:00:00:00'
 	option type 'bridge'
 	option proto 'static'
-	option ipaddr '192.168.11.1'
 	option netmask '255.255.255.0'
 	option ip6assign '60'
+	option _orig_ifname 'eth0 ra0'
+	option _orig_bridge 'true'
+	option ipaddr '192.168.11.1'
 	option ifname 'eth0'
 
 config switch
@@ -24,7 +26,7 @@ config switch
 	option enable_vlan '0'
 
 config switch_vlan
-	option device 'switch0'
+	option device 'switch0'	
 	option vlan '1'
 	option ports '1 2 3 4 6t'
 
@@ -33,19 +35,31 @@ config switch_vlan
 	option vlan '2'
 	option ports '0 6t'
 
-config interface 'wwan'
+config interface '4g'
 	option proto '3g'
 	option device '/dev/ttyUSB1'
 	option service 'umts'
 	option apn 'cmiot'
+	option metric '101'
+	option keepalive '3 5'
 
 config interface 'T2N'
 	option proto 't2n'
 	option server '106.12.253.52'
 	option port '6051'
-	option community '868618058837428'
 	option key '12345678'
 	option mode 'static'
 	option ipaddr '11.5.0.0'
 	option netmask '255.255.0.0'
-	
+	option community '868618059000570'
+
+config interface 'rndis'
+	option proto 'dhcp'
+	option ifname 'usb0'
+	option auto '0'
+
+config interface 'wlan'
+	option ifname 'apcli0'
+	option _orig_ifname 'apcli0'
+	option _orig_bridge 'false'
+	option proto 'dhcp'
