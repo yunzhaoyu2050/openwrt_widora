@@ -1,0 +1,29 @@
+{
+    "server": { // 服务器配置参数
+        "addr": "127.0.0.1",
+        "port": 80,
+        // "static_path": "/usrdata/static/"
+        "static_path": "/home/ubuntu/rk3288/rk3288-linux/app/lua-test/luvit-app-x86_64-test/mcxa-project/res/static"
+    },
+    "system": { // 平台系统配置参数
+        "cloud_ser_addr": "192.168.1.166",
+        "cloud_ser_port": 6553,
+        "nmea_remote_port": 6061,
+        "rtcm_remote_port": 6062,
+        "log_level": "DEBUG", // log输出级别："DEBUG", "INFO", "WARN", "ERROR", "FATAL"
+        "log_out_type": "terminal", // log输出方式： terminal, file@runlog.log, net@127.0.0.1:5001,
+        // "log_path": "/usrdata/log/"
+        "log_path": "./run.log",
+        "cfg_file_path": "./config"
+    },
+    "dev": {
+        "gps_dev":"/dev/ttyS2",
+        "quectel_dev": "/dev/ttyUSB1",
+        "right_ant": 19, // 天线 gpio
+        "left_ant": 18
+    },
+    "gps": {
+        "right_ant_avr_count:": 6,
+        "left_ant_avr_count:": 6
+    }
+}

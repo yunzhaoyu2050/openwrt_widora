@@ -1,0 +1,237 @@
+local bl0939 = require("bl0939")
+p("start .......")
+bl0939.start()
+bl0939.test()
+-- local spawn = require("childprocess").spawn\
+-- local exec = require("childprocess").exec
+-- local uv = require("uv")
+-- local los = require("los")
+
+-- child process测试spawn
+-- run = function()
+--   local child, options, onStdout, onExit, onEnd, data
+--   options = {
+--     env = {TEST1 = 1}
+--   }
+--   data = ""
+--   if los.type() == "win32" then
+--     child = spawn("cmd.exe", {"/C", "set"}, options)
+--   else
+--     child = spawn("env", {}, options)
+--   end
+--   function onStdout(chunk)
+--     p("stdout", chunk)
+--     data = data .. chunk
+--   end
+--   function onExit(code, signal)
+--     p("exit")
+--     assert(code == 0)
+--     assert(signal == 0)
+--   end
+--   function onEnd()
+--     assert(data:find("TEST1=1"))
+--     p("found")
+--     child.stdin:destroy()
+--   end
+--   child:on(
+--     "error",
+--     function(err)
+--       p(err)
+--       child:close()
+--     end
+--   )
+--   child.stdout:once("end", onEnd)
+--   child.stdout:on("data", onStdout)
+--   child:on("exit", onExit)
+--   child:on("close", onExit)
+--   p("test child process....")
+-- end
+
+-- child process测试exec
+-- run =  function()
+--   local child, options, onStdout, onExit, onEnd, data
+--   options = {
+--     env = { TEST1 = 1 }
+--   }
+--   data = ''
+--   if los.type() == 'win32' then
+--     child = exec('cmd.exe /C set', options)
+--   else
+--     child = exec('/root/spidev_bl0939', options)
+--   end
+--   function onStdout(chunk)
+--     p('stdout', chunk)
+--     data = data .. chunk
+--   end
+--   function onExit(code, signal)
+--     p('exit')
+--     assert(code == 0)
+--     assert(signal == 0)
+--   end
+--   function onEnd()
+--     assert(data:find('TEST1=1'))
+--     p('found')
+--     child.stdin:destroy()
+--   end
+--   child:on('error', function(err)
+--     p(err)
+--     child:close()
+--   end)
+--   child.stdout:once('end', onEnd)
+--   child.stdout:on('data', onStdout)
+--   child:on('exit', onExit)
+--   child:on('close', onExit)
+--   p("test child process....")
+-- end
+-- run()
+
+-- local process = require("childprocess")
+-- local JSON = require("json")
+-- local Emitter = require("core").Emitter
+-- local emitter = Emitter:new()
+-- local child
+-- emitter.start = function()
+-- 	child = process.spawn("/root/spidev_bl0939", {}, {})
+-- 	local function onStdout(data)
+-- 		p("bl0939 recv data:" , data)
+-- 		local raw_data = JSON.parse(data)
+-- 		local rms_cha = {}
+-- 		for index, value in ipairs(raw_data[1]) do
+-- 			rms_cha[index] = math.floor(value * 1.218 / 228422 * 2000)
+-- 		end
+-- 		local rms_chb = {}
+-- 		for index, value in ipairs(raw_data[2]) do
+-- 			rms_chb[index] = math.floor(value * 1.218 / 228422 * 2000)
+-- 		end
+-- 		local rms_chc = {}
+-- 		rms_chc[1] = math.floor(raw_data[3] * 1.218 / 162002 * 2000)
+-- 		emitter:emit("data", {rms_cha, rms_chb, rms_chc})
+-- 	end
+-- 	local function onExit(code, signal)
+-- 		emitter:emit("exit", code, signal)
+-- 	end
+-- 	local function onEnd()
+-- 		child.stdin:destroy()
+-- 		emitter:emit("end")
+-- 	end
+-- 	local function onError(err)
+-- 		assert(err)
+-- 		emitter:emit("err", err)
+-- 	end
+-- 	child.stdout:once("end", onEnd)
+-- 	child.stdout:on("data", onStdout)
+-- 	child.stdout:on("error", onError)
+-- 	child.stderr:once("end", onEnd)
+-- 	child.stderr:on("error", onError)
+-- 	child.stderr:on("data", onStdout)
+-- 	child:on("exit", onExit)
+-- 	child:on("close", onExit)
+-- 	p("bl0939 start...")
+-- end
+
+-- emitter.stop = function()
+-- 	child.stdin:write("\17")
+-- 	process.kill(child.pid)
+-- end
+
+-- emitter.start()
+-- local E_motor_config = {
+-- 	{start_value = 1000, stop_value = 200, debounce_threshold = 3}, --通道1填料
+-- 	{start_value = 1000, stop_value = 200, upper_value = 8000, normal_value = 5000, debounce_threshold = 3}, --通道2夯击
+-- 	{start_value = 1000, stop_value = 200, debounce_threshold = 2} --通道3行走
+-- }
+-- local E_motor_context = {
+-- 	{active_utc = 0, debounce_cnt = 0, state = 0, duration = 0, times = 0, on_time = 0, off_time = 0},
+-- 	{active_utc = 0, debounce_cnt = 0, state = 0, duration = 0, times = 0, upper_times = 0, on_time = 0, off_time = 0},
+-- 	{active_utc = 0, debounce_cnt = 0, state = 0, duration = 0, times = 0, on_time = 0, off_time = 0}
+-- }
+
+-- bl0939:on(
+-- 	"data",
+-- 	function(ac_rms)
+-- 		p("ac_rms:", ac_rms)
+-- 		local now = os.time()
+-- 		for ch, rms in ipairs(ac_rms) do
+-- 			local cfg = E_motor_config[ch]
+-- 			local ctx = E_motor_context[ch]
+-- 			for index, value in ipairs(rms) do
+-- 				if ctx.state == 0 then
+-- 					ctx.duration = ctx.duration + 1
+-- 					ctx.off_time = ctx.off_time + 1
+-- 					if value > cfg.start_value then
+-- 						ctx.debounce_cnt = ctx.debounce_cnt + 1
+-- 						if ctx.debounce_cnt >= cfg.debounce_threshold then
+-- 							state_change_handle(ch, ctx, rms)
+-- 							ctx.debounce_cnt = 0
+-- 							ctx.duration = 0
+-- 							ctx.active_utc = now
+-- 							ctx.state = 1
+-- 							ctx.times = ctx.times + 1
+-- 							if ctx.upper_value ~= nil then
+-- 								ctx.upper_times = 0
+-- 							end
+-- 						end
+-- 					else
+-- 						ctx.debounce_cnt = 0
+-- 					end
+-- 				elseif ctx.state == 1 then
+-- 					ctx.duration = ctx.duration + 1
+-- 					ctx.on_time = ctx.on_time + 1
+-- 					if value < cfg.stop_value then
+-- 						ctx.debounce_cnt = ctx.debounce_cnt + 1
+-- 						if ctx.debounce_cnt >= cfg.debounce_threshold then
+-- 							state_change_handle(ch, ctx, rms)
+-- 							ctx.debounce_cnt = 0
+-- 							ctx.duration = 0
+-- 							ctx.active_utc = now
+-- 							ctx.state = 0
+-- 						-- ctx.times = ctx.times +1
+-- 						end
+-- 					else
+-- 						if cfg.upper_value == nil then
+-- 							ctx.debounce_cnt = 0
+-- 						else
+-- 							if value > cfg.upper_value then
+-- 								ctx.debounce_cnt = ctx.debounce_cnt + 1
+-- 								if ctx.debounce_cnt >= cfg.debounce_threshold then
+-- 									ctx.debounce_cnt = 0
+-- 									ctx.active_utc = now
+-- 									ctx.state = 2
+-- 									ctx.upper_times = ctx.upper_times + 1
+-- 								end
+-- 							else
+-- 								ctx.debounce_cnt = 0
+-- 							end
+-- 						end
+-- 					end
+-- 				elseif ctx.state == 2 then
+-- 					ctx.duration = ctx.duration + 1
+-- 					ctx.on_time = ctx.on_time + 1
+-- 					if cfg.normal_value == nil then
+-- 						ctx.state = 1
+-- 					else
+-- 						if value < cfg.normal_value then
+-- 							ctx.debounce_cnt = ctx.debounce_cnt + 1
+-- 							if ctx.debounce_cnt >= cfg.debounce_threshold then
+-- 								ctx.debounce_cnt = 0
+-- 								ctx.active_utc = now
+-- 								ctx.state = 1
+-- 							end
+-- 						else
+-- 							ctx.debounce_cnt = 0
+-- 						end
+-- 					end
+-- 				else
+-- 					ctx.state = 0
+-- 					ctx.debounce_cnt = 0
+-- 				end
+-- 			end
+-- 		end
+-- 		count = count + 1
+-- 		if count > 5 then
+-- 			--  p(run_context)
+-- 			--  p(ac_rms)
+-- 			count = 0
+-- 		end
+-- 	end
+-- )

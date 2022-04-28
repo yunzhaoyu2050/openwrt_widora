@@ -76,6 +76,7 @@ platform_check_image() {
 	mpr-a2 | \
 	mr-102n | \
 	mzk-w300nh2 | \
+	mc7628_g | \
 	nbg-419n | \
 	nw718 | \
 	omni-emb | \

@@ -1,0 +1,8 @@
+Package: MchjApp
+Version: v0.0.1
+Architecture: mips
+Maintainer: xxx <xxx@gmail.com>
+Section: base
+Priority: optional
+Description: mcxa hj lua app
+Source: github.com
